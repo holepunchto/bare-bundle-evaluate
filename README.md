@@ -17,6 +17,7 @@ const bundle = new Bundle()
     main: true
   })
   .write('/bar.js', 'module.exports = 42')
+  .mount(new URL(__dirname, 'file://'))
 
 evaluate(bundle).exports
 // 42

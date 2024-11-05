@@ -65,7 +65,7 @@ test('require.asset(\'id\')', (t) => {
   t.is(evaluate(bundle.mount(pathToFileURL('./test.bundle/'))).exports, path.resolve('./test.bundle/bar.txt'))
 })
 
-test('require.addon(\'id\', referrer)', (t) => {
+test('require.asset(\'id\', referrer)', (t) => {
   const bundle = new Bundle()
     .write('/a/foo.js', 'module.exports = require(\'../b\')(\'./bar.txt\', __filename)', {
       main: true

@@ -43,8 +43,8 @@ function load (bundle, cache, url) {
   require.main = urlToPath(bundle.main)
   require.cache = cache
 
-  require.resolve = function (specifier, referrer = url) {
-    const resolved = resolve(bundle, specifier, toURL(referrer, url))
+  require.resolve = function (specifier, parentURL = url) {
+    const resolved = resolve(bundle, specifier, toURL(parentURL, url))
 
     switch (resolved.protocol) {
       case 'builtin:': return resolved.pathname
@@ -52,12 +52,12 @@ function load (bundle, cache, url) {
     }
   }
 
-  require.addon = function (specifier = '.', referrer = url) {
-    return addon(bundle, specifier, toURL(referrer, url))
+  require.addon = function (specifier = '.', parentURL = url) {
+    return addon(bundle, specifier, toURL(parentURL, url))
   }
 
-  require.asset = function (specifier, referrer = url) {
-    return urlToPath(asset(bundle, specifier, toURL(referrer, url)))
+  require.asset = function (specifier, parentURL = url) {
+    return urlToPath(asset(bundle, specifier, toURL(parentURL, url)))
   }
 
   if (path.extname(url.href) === '.json') module.exports = JSON.parse(source)
@@ -76,8 +76,8 @@ function load (bundle, cache, url) {
   return module
 }
 
-function resolve (bundle, specifier, referrer) {
-  for (const resolved of resolveModule(specifier, referrer, {
+function resolve (bundle, specifier, parentURL) {
+  for (const resolved of resolveModule(specifier, parentURL, {
     resolutions: bundle.resolutions,
     builtins: runtime.builtins,
     conditions: ['require', ...runtime.conditions],
@@ -86,11 +86,11 @@ function resolve (bundle, specifier, referrer) {
     if (resolved.protocol === 'builtin:' || bundle.exists(resolved.href)) return resolved
   }
 
-  throw new Error(`Cannot find module '${specifier}' imported from '${referrer.href}'`)
+  throw new Error(`Cannot find module '${specifier}' imported from '${parentURL.href}'`)
 }
 
-function addon (bundle, specifier, referrer) {
-  for (const resolved of resolveAddon(specifier, referrer, {
+function addon (bundle, specifier, parentURL) {
+  for (const resolved of resolveAddon(specifier, parentURL, {
     host,
     resolutions: bundle.resolutions,
     conditions: ['addon', ...runtime.conditions],
@@ -105,11 +105,11 @@ function addon (bundle, specifier, referrer) {
     }
   }
 
-  throw new Error(`Cannot find addon '${specifier}' imported from '${referrer.href}'`)
+  throw new Error(`Cannot find addon '${specifier}' imported from '${parentURL.href}'`)
 }
 
-function asset (bundle, specifier, referrer) {
-  for (const resolved of resolveModule(specifier, referrer, {
+function asset (bundle, specifier, parentURL) {
+  for (const resolved of resolveModule(specifier, parentURL, {
     resolutions: bundle.resolutions,
     builtins: runtime.builtins,
     conditions: ['asset', ...runtime.conditions]
@@ -117,7 +117,7 @@ function asset (bundle, specifier, referrer) {
     if (resolved.protocol === 'file:') return resolved
   }
 
-  throw new Error(`Cannot find asset '${specifier}' imported from '${referrer.href}'`)
+  throw new Error(`Cannot find asset '${specifier}' imported from '${parentURL.href}'`)
 }
 
 function readPackage (bundle, url) {

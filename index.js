@@ -48,10 +48,14 @@ function load (bundle, cache, url) {
   }
 
   require.addon = function (specifier = '.', parentURL = url) {
-    return addon(bundle, specifier, toURL(parentURL, url))
+    return builtinRequire(urlToPath(addon(bundle, specifier, toURL(parentURL, url))))
   }
 
   require.addon.host = host
+
+  require.addon.resolve = function (specifier = '.', parentURL = url) {
+    return urlToPath(addon(bundle, specifier, toURL(parentURL, url)))
+  }
 
   require.asset = function (specifier, parentURL = url) {
     return urlToPath(asset(bundle, specifier, toURL(parentURL, url)))
@@ -95,10 +99,12 @@ function addon (bundle, specifier, parentURL) {
   }, readPackage.bind(null, bundle))) {
     if (resolved.protocol === 'file:') {
       try {
-        return builtinRequire(fileURLToPath(resolved))
+        builtinRequire(fileURLToPath(resolved))
       } catch {
         continue
       }
+
+      return resolved
     }
   }
 

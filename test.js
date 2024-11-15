@@ -56,6 +56,59 @@ test('require.addon(\'id\', referrer)', (t) => {
   t.alike(evaluate(bundle.mount(pathToFileURL('./test/fixtures/addon/test.bundle/'))).exports, 42)
 })
 
+test('require.addon.resolve()', (t) => {
+  const bundle = new Bundle()
+    .write('/binding.js', 'module.exports = require.addon.resolve()', {
+      main: true
+    })
+    .write('/package.json', '{ "name": "addon", "addon": true }')
+
+  const resolved = evaluate(bundle.mount(pathToFileURL('./test/fixtures/addon/test.bundle/'))).exports
+
+  t.comment(resolved)
+  t.is(typeof resolved, 'string')
+})
+
+test('require.addon.resolve(\'id\')', (t) => {
+  const bundle = new Bundle()
+    .write('/binding.js', 'module.exports = require.addon.resolve(\'.\')', {
+      main: true
+    })
+    .write('/package.json', '{ "name": "addon", "addon": true }')
+
+  const resolved = evaluate(bundle.mount(pathToFileURL('./test/fixtures/addon/test.bundle/'))).exports
+
+  t.comment(resolved)
+  t.is(typeof resolved, 'string')
+})
+
+test('require.addon.resolve(\'id\', referrer)', (t) => {
+  const bundle = new Bundle()
+    .write('/a/binding.js', 'module.exports = require(\'../b\')(\'.\', __filename)', {
+      main: true
+    })
+    .write('/a/package.json', '{ "name": "addon", "addon": true }')
+    .write('/b/index.js', 'module.exports = (specifier, referrer) => require.addon.resolve(specifier, referrer)')
+
+  const resolved = evaluate(bundle.mount(pathToFileURL('./test/fixtures/addon/test.bundle/'))).exports
+
+  t.comment(resolved)
+  t.is(typeof resolved, 'string')
+})
+
+test('require.addon.host', (t) => {
+  const bundle = new Bundle()
+    .write('/binding.js', 'module.exports = require.addon.host', {
+      main: true
+    })
+    .write('/package.json', '{ "name": "addon", "addon": true }')
+
+  const host = evaluate(bundle.mount(pathToFileURL('./test/fixtures/addon/test.bundle/'))).exports
+
+  t.comment(host)
+  t.is(typeof host, 'string')
+})
+
 test('require.asset(\'id\')', (t) => {
   const bundle = new Bundle()
     .write('/foo.js', 'module.exports = require.asset(\'./bar.txt\')', {

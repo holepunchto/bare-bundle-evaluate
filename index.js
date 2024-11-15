@@ -44,17 +44,14 @@ function load (bundle, cache, url) {
   require.cache = cache
 
   require.resolve = function (specifier, parentURL = url) {
-    const resolved = resolve(bundle, specifier, toURL(parentURL, url))
-
-    switch (resolved.protocol) {
-      case 'builtin:': return resolved.pathname
-      default: return urlToPath(resolved)
-    }
+    return urlToPath(resolve(bundle, specifier, toURL(parentURL, url)))
   }
 
   require.addon = function (specifier = '.', parentURL = url) {
     return addon(bundle, specifier, toURL(parentURL, url))
   }
+
+  require.addon.host = host
 
   require.asset = function (specifier, parentURL = url) {
     return urlToPath(asset(bundle, specifier, toURL(parentURL, url)))

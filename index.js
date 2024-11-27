@@ -72,7 +72,7 @@ function load(bundle, cache, url) {
       '__filename',
       '__dirname',
       source
-    ) // eslint-disable-line no-new-func
+    )
 
     fn(require, module, module.exports, module.filename, module.dirname)
   }

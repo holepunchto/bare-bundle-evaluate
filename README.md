@@ -13,7 +13,7 @@ const Bundle = require('bare-bundle')
 const evaluate = require('bare-bundle-evaluate')
 
 const bundle = new Bundle()
-  .write('/foo.js', 'module.exports = require(\'./bar\')', {
+  .write('/foo.js', "module.exports = require('./bar')", {
     main: true
   })
   .write('/bar.js', 'module.exports = 42')

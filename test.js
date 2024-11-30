@@ -75,6 +75,106 @@ test("require.addon('id', referrer)", (t) => {
   )
 })
 
+test("require.addon('id'), preresolved", (t) => {
+  const bundle = new Bundle()
+    .write('/binding.js', "module.exports = require.addon('.')", {
+      main: true,
+      imports: {
+        '.': {
+          addon: {
+            darwin: {
+              arm64: {
+                bare: '/../fixtures/addon/prebuilds/darwin-arm64/addon.bare',
+                node: '/../fixtures/addon/prebuilds/darwin-arm64/addon.node'
+              },
+              x64: {
+                bare: '/../fixtures/addon/prebuilds/darwin-x64/addon.bare',
+                node: '/../fixtures/addon/prebuilds/darwin-x64/addon.node'
+              }
+            },
+            linux: {
+              arm64: {
+                bare: '/../fixtures/addon/prebuilds/linux-arm64/addon.bare',
+                node: '/../fixtures/addon/prebuilds/linux-arm64/addon.node'
+              },
+              x64: {
+                bare: '/../fixtures/addon/prebuilds/linux-x64/addon.bare',
+                node: '/../fixtures/addon/prebuilds/linux-x64/addon.node'
+              }
+            },
+            win32: {
+              arm64: {
+                bare: '/../fixtures/addon/prebuilds/win32-arm64/addon.bare',
+                node: '/../fixtures/addon/prebuilds/win32-arm64/addon.node'
+              },
+              x64: {
+                bare: '/../fixtures/addon/prebuilds/win32-x64/addon.bare',
+                node: '/../fixtures/addon/prebuilds/win32-x64/addon.node'
+              }
+            }
+          }
+        }
+      }
+    })
+    .write('/package.json', '{ "name": "addon", "addon": true }')
+
+  t.is(evaluate(bundle.mount(pathToFileURL('./test/test.bundle/'))).exports, 42)
+})
+
+test("require.addon('id', referrer), preresolved", (t) => {
+  const bundle = new Bundle()
+    .write(
+      '/a/binding.js',
+      "module.exports = require('../b')('.', __filename)",
+      {
+        main: true,
+        imports: {
+          '.': {
+            addon: {
+              darwin: {
+                arm64: {
+                  bare: '/../fixtures/addon/prebuilds/darwin-arm64/addon.bare',
+                  node: '/../fixtures/addon/prebuilds/darwin-arm64/addon.node'
+                },
+                x64: {
+                  bare: '/../fixtures/addon/prebuilds/darwin-x64/addon.bare',
+                  node: '/../fixtures/addon/prebuilds/darwin-x64/addon.node'
+                }
+              },
+              linux: {
+                arm64: {
+                  bare: '/../fixtures/addon/prebuilds/linux-arm64/addon.bare',
+                  node: '/../fixtures/addon/prebuilds/linux-arm64/addon.node'
+                },
+                x64: {
+                  bare: '/../fixtures/addon/prebuilds/linux-x64/addon.bare',
+                  node: '/../fixtures/addon/prebuilds/linux-x64/addon.node'
+                }
+              },
+              win32: {
+                arm64: {
+                  bare: '/../fixtures/addon/prebuilds/win32-arm64/addon.bare',
+                  node: '/../fixtures/addon/prebuilds/win32-arm64/addon.node'
+                },
+                x64: {
+                  bare: '/../fixtures/addon/prebuilds/win32-x64/addon.bare',
+                  node: '/../fixtures/addon/prebuilds/win32-x64/addon.node'
+                }
+              }
+            }
+          }
+        }
+      }
+    )
+    .write('/a/package.json', '{ "name": "addon", "addon": true }')
+    .write(
+      '/b/index.js',
+      'module.exports = (specifier, referrer) => require.addon(specifier, referrer)'
+    )
+
+  t.is(evaluate(bundle.mount(pathToFileURL('./test/test.bundle/'))).exports, 42)
+})
+
 test('require.addon.resolve()', (t) => {
   const bundle = new Bundle()
     .write('/binding.js', 'module.exports = require.addon.resolve()', {
@@ -191,6 +291,31 @@ test("require.asset('id'), preresolved", (t) => {
       }
     }
   )
+
+  t.is(
+    evaluate(bundle.mount(pathToFileURL('./test.bundle/'))).exports,
+    path.resolve('./bar.txt')
+  )
+})
+
+test("require.asset('id', referrer), preresolved", (t) => {
+  const bundle = new Bundle()
+    .write(
+      '/a/foo.js',
+      "module.exports = require('../b')('./bar.txt', __filename)",
+      {
+        main: true,
+        imports: {
+          './bar.txt': {
+            asset: '/../bar.txt'
+          }
+        }
+      }
+    )
+    .write(
+      '/b/index.js',
+      'module.exports = (specifier, referrer) => require.asset(specifier, referrer)'
+    )
 
   t.is(
     evaluate(bundle.mount(pathToFileURL('./test.bundle/'))).exports,

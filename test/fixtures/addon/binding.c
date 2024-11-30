@@ -2,7 +2,7 @@
 #include <node_api.h>
 
 static napi_value
-bare_addon_exports (napi_env env, napi_value exports) {
+bare_addon_exports(napi_env env, napi_value exports) {
   int err;
 
   err = napi_create_uint32(env, 42, &exports);

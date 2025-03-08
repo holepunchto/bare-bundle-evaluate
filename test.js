@@ -2,8 +2,8 @@ const test = require('brittle')
 const path = require('path')
 const { pathToFileURL } = require('url')
 const Bundle = require('bare-bundle')
+const runtime = require('bare-bundle-evaluate/runtime')
 const evaluate = require('.')
-const runtime = require('#runtime')
 
 test("require('id')", (t) => {
   const bundle = new Bundle()

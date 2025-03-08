@@ -2,23 +2,19 @@ const path = require('path')
 const { pathToFileURL, fileURLToPath } = require('url')
 const resolveModule = require('bare-module-resolve')
 const resolveAddon = require('bare-addon-resolve')
-const runtime = require('#runtime')
+const defaultRuntime = require('bare-bundle-evaluate/runtime')
 
 const builtinRequire = require
 
-const host = `${runtime.platform}-${runtime.arch}${runtime.simulator ? '-simulator' : ''}`
-
-const isWindows = runtime.platform === 'win32'
-
-module.exports = function evaluate(bundle) {
-  return load(bundle, Object.create(null), new URL(bundle.main))
+module.exports = function evaluate(bundle, runtime = defaultRuntime) {
+  return load(bundle, runtime, Object.create(null), new URL(bundle.main))
 }
 
-function load(bundle, cache, url) {
+function load(bundle, runtime, cache, url) {
   if (cache[url.href]) return cache[url.href].exports
 
-  const filename = urlToPath(url)
-  const dirname = urlToDirname(url)
+  const filename = urlToPath(url, runtime)
+  const dirname = urlToDirname(url, runtime)
 
   const module = (cache[url.href] = {
     filename,
@@ -37,30 +33,47 @@ function load(bundle, cache, url) {
   if (source === null) throw new Error(`Cannot find module '${url.href}'`)
 
   function require(specifier) {
-    return load(bundle, cache, resolve(bundle, specifier, url)).exports
+    return load(
+      bundle,
+      runtime,
+      cache,
+      resolve(bundle, runtime, specifier, url)
+    ).exports
   }
 
-  require.main = urlToPath(bundle.main)
+  require.main = urlToPath(bundle.main, runtime)
   require.cache = cache
 
   require.resolve = function (specifier, parentURL = url) {
-    return urlToPath(resolve(bundle, specifier, toURL(parentURL, url)))
+    return urlToPath(
+      resolve(bundle, runtime, specifier, toURL(parentURL, url)),
+      runtime
+    )
   }
 
   require.addon = function (specifier = '.', parentURL = url) {
     return builtinRequire(
-      urlToPath(addon(bundle, specifier, toURL(parentURL, url)))
+      urlToPath(
+        addon(bundle, runtime, specifier, toURL(parentURL, url)),
+        runtime
+      )
     )
   }
 
-  require.addon.host = host
+  require.addon.host = runtime.host
 
   require.addon.resolve = function (specifier = '.', parentURL = url) {
-    return urlToPath(addon(bundle, specifier, toURL(parentURL, url)))
+    return urlToPath(
+      addon(bundle, runtime, specifier, toURL(parentURL, url)),
+      runtime
+    )
   }
 
   require.asset = function (specifier, parentURL = url) {
-    return urlToPath(asset(bundle, specifier, toURL(parentURL, url)))
+    return urlToPath(
+      asset(bundle, runtime, specifier, toURL(parentURL, url)),
+      runtime
+    )
   }
 
   if (path.extname(url.href) === '.json') module.exports = JSON.parse(source)
@@ -80,7 +93,7 @@ function load(bundle, cache, url) {
   return module
 }
 
-function resolve(bundle, specifier, parentURL) {
+function resolve(bundle, runtime, specifier, parentURL) {
   for (const resolved of resolveModule(
     specifier,
     parentURL,
@@ -102,12 +115,12 @@ function resolve(bundle, specifier, parentURL) {
   )
 }
 
-function addon(bundle, specifier, parentURL) {
+function addon(bundle, runtime, specifier, parentURL) {
   for (const resolved of resolveAddon(
     specifier,
     parentURL,
     {
-      host,
+      host: runtime.host,
       resolutions: bundle.resolutions,
       conditions: ['addon', ...runtime.conditions],
       extensions: runtime.extensions.addon,
@@ -131,7 +144,7 @@ function addon(bundle, specifier, parentURL) {
   )
 }
 
-function asset(bundle, specifier, parentURL) {
+function asset(bundle, runtime, specifier, parentURL) {
   for (const resolved of resolveModule(
     specifier,
     parentURL,
@@ -177,9 +190,11 @@ function toURL(value, base) {
   }
 }
 
-function urlToPath(url) {
+function urlToPath(url, runtime) {
   if (url.protocol === 'file:') return fileURLToPath(url)
   if (url.protocol === 'builtin:') return url.pathname
+
+  const isWindows = runtime.platform === 'win32'
 
   if (isWindows) {
     if (/%2f|%5c/i.test(url.pathname)) {
@@ -196,9 +211,11 @@ function urlToPath(url) {
   return decodeURIComponent(url.pathname)
 }
 
-function urlToDirname(url) {
+function urlToDirname(url, runtime) {
   if (url.protocol === 'file:') return path.dirname(fileURLToPath(url))
   if (url.protocol === 'builtin:') return '.'
+
+  const isWindows = runtime.platform === 'win32'
 
   if (isWindows) {
     if (/%2f|%5c/i.test(url.pathname)) {

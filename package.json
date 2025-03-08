@@ -3,18 +3,18 @@
   "version": "1.1.0",
   "description": "Evaluate a bundle of CommonJS modules across JavaScript runtimes",
   "exports": {
+    "./package": "./package.json",
     ".": "./index.js",
-    "./package": "./package.json"
+    "./runtime": {
+      "bare": "./lib/runtime/bare.js",
+      "node": "./lib/runtime/node.js"
+    }
   },
   "files": [
     "index.js",
     "lib"
   ],
   "imports": {
-    "#runtime": {
-      "bare": "./lib/runtime/bare.js",
-      "node": "./lib/runtime/node.js"
-    },
     "path": {
       "bare": "bare-path",
       "default": "path"

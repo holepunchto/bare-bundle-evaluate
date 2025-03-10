@@ -25,7 +25,7 @@ evaluate(bundle).exports
 
 ## API
 
-#### `const module = evaluate(bundle)`
+#### `const module = evaluate(bundle[, runtime][, builtinRequire])`
 
 ## License
 

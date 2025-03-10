@@ -5,6 +5,7 @@
   "exports": {
     "./package": "./package.json",
     ".": "./index.js",
+    "./constants": "./lib/constants.js",
     "./runtime": {
       "bare": "./lib/runtime/bare.js",
       "node": "./lib/runtime/node.js"

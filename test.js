@@ -25,6 +25,33 @@ test("circular require('id')", (t) => {
   t.is(evaluate(bundle.mount(pathToFileURL('./test.bundle/'))).exports, 42)
 })
 
+test("require('id'), preresolved", (t) => {
+  const bundle = new Bundle()
+    .write('/foo.js', "module.exports = require('./bar')", {
+      main: true,
+      imports: {
+        './bar': '/baz.js'
+      }
+    })
+    .write('/baz.js', 'module.exports = 42')
+
+  t.is(evaluate(bundle.mount(pathToFileURL('./test.bundle/'))).exports, 42)
+})
+
+test("require('id'), globally preresolved", (t) => {
+  const bundle = new Bundle()
+    .write('/foo.js', "module.exports = require('./bar')", {
+      main: true
+    })
+    .write('/baz.js', 'module.exports = 42')
+
+  bundle.imports = {
+    './bar': '/baz.js'
+  }
+
+  t.is(evaluate(bundle.mount(pathToFileURL('./test.bundle/'))).exports, 42)
+})
+
 test('require.addon()', (t) => {
   const bundle = new Bundle()
     .write('/binding.js', 'module.exports = require.addon()', {
@@ -323,10 +350,14 @@ test("require.asset('id', referrer), preresolved", (t) => {
   )
 })
 
-test("require('builtin')", { skip: runtime.id !== 'node' }, (t) => {
+test("require('builtin')", (t) => {
+  const [builtin = null] = runtime.builtins
+
+  if (builtin === null) return t.pass('has no builtins')
+
   const bundle = new Bundle().write(
     '/foo.js',
-    "module.exports = require('fs')",
+    `module.exports = require('${builtin}')`,
     {
       main: true
     }
@@ -334,6 +365,113 @@ test("require('builtin')", { skip: runtime.id !== 'node' }, (t) => {
 
   t.is(
     evaluate(bundle.mount(pathToFileURL('./test.bundle/'))).exports,
-    require('fs')
+    require(builtin)
   )
+})
+
+test("require('.json')", (t) => {
+  const bundle = new Bundle()
+    .write('/foo.js', "module.exports = require('./bar.json')", {
+      main: true
+    })
+    .write('/bar.json', '{ "hello": "world" }')
+
+  t.alike(evaluate(bundle.mount(pathToFileURL('./test.bundle/'))).exports, {
+    hello: 'world'
+  })
+})
+
+test("require('.bin')", (t) => {
+  const bundle = new Bundle()
+    .write('/foo.js', "module.exports = require('./bar.bin')", {
+      main: true
+    })
+    .write('/bar.bin', 'Hello world')
+
+  t.alike(
+    evaluate(bundle.mount(pathToFileURL('./test.bundle/'))).exports,
+    Buffer.from('Hello world')
+  )
+})
+
+test("require('.txt')", (t) => {
+  const bundle = new Bundle()
+    .write('/foo.js', "module.exports = require('./bar.txt')", {
+      main: true
+    })
+    .write('/bar.txt', 'Hello world')
+
+  t.alike(
+    evaluate(bundle.mount(pathToFileURL('./test.bundle/'))).exports,
+    'Hello world'
+  )
+})
+
+test("require('id', { with: { type: 'json' } })", (t) => {
+  const bundle = new Bundle()
+    .write(
+      '/foo.js',
+      "module.exports = require('./bar', { with: { type: 'json' } })",
+      {
+        main: true
+      }
+    )
+    .write('/bar', '{ "hello": "world" }')
+
+  t.alike(evaluate(bundle.mount(pathToFileURL('./test.bundle/'))).exports, {
+    hello: 'world'
+  })
+})
+
+test("require('id', { with: { type: 'binary' } })", (t) => {
+  const bundle = new Bundle()
+    .write(
+      '/foo.js',
+      "module.exports = require('./bar', { with: { type: 'binary' } })",
+      {
+        main: true
+      }
+    )
+    .write('/bar', 'Hello world')
+
+  t.alike(
+    evaluate(bundle.mount(pathToFileURL('./test.bundle/'))).exports,
+    Buffer.from('Hello world')
+  )
+})
+
+test("require('id', { with: { type: 'text' } })", (t) => {
+  const bundle = new Bundle()
+    .write(
+      '/foo.js',
+      "module.exports = require('./bar', { with: { type: 'text' } })",
+      {
+        main: true
+      }
+    )
+    .write('/bar', 'Hello world')
+
+  t.is(
+    evaluate(bundle.mount(pathToFileURL('./test.bundle/'))).exports,
+    'Hello world'
+  )
+})
+
+test("require('id', { with: { type: 'type' } }), asserted type mismatch", (t) => {
+  const bundle = new Bundle()
+    .write(
+      '/foo.js',
+      "require('./bar', { with: { type: 'text' } }); require('./bar', { with: { type: 'binary' } })",
+      {
+        main: true
+      }
+    )
+    .write('/bar', 'Hello world')
+
+  try {
+    evaluate(bundle.mount(pathToFileURL('./test.bundle/')))
+    t.fail()
+  } catch (err) {
+    t.comment(err.message)
+  }
 })

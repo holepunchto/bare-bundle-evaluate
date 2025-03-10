@@ -3,24 +3,54 @@ const { pathToFileURL, fileURLToPath } = require('url')
 const resolveModule = require('bare-module-resolve')
 const resolveAddon = require('bare-addon-resolve')
 const defaultRuntime = require('bare-bundle-evaluate/runtime')
+const constants = require('./lib/constants')
 
-const builtinRequire = require
+module.exports = function evaluate(bundle, runtime, builtinRequire) {
+  if (typeof runtime === 'function') {
+    builtinRequire = runtime
+    runtime = defaultRuntime
+  } else if (typeof runtime !== 'object' || runtime === null) {
+    runtime = defaultRuntime
+  }
 
-module.exports = function evaluate(bundle, runtime = defaultRuntime) {
-  return load(bundle, runtime, Object.create(null), new URL(bundle.main))
+  if (typeof builtinRequire !== 'function') {
+    builtinRequire = require
+  }
+
+  return load(
+    bundle,
+    runtime,
+    builtinRequire,
+    Object.create(null),
+    new URL(bundle.main)
+  )
 }
 
-function load(bundle, runtime, cache, url) {
-  if (cache[url.href]) return cache[url.href].exports
+function load(bundle, runtime, builtinRequire, cache, url, attributes) {
+  const type = typeForAttributes(attributes)
+
+  let module = cache[url.href] || null
+
+  if (module !== null) {
+    if (type !== 0 && type !== module.type) {
+      throw new Error(
+        `Module '${module.url.href}' is not of type '${nameOfType(type)}'`
+      )
+    }
+
+    return module
+  }
 
   const filename = urlToPath(url, runtime)
   const dirname = urlToDirname(url, runtime)
 
-  const module = (cache[url.href] = {
+  module = cache[url.href] = {
+    url,
+    type,
     filename,
     dirname,
     exports: {}
-  })
+  }
 
   if (url.protocol === 'builtin:') {
     module.exports = builtinRequire(url.pathname)
@@ -32,12 +62,16 @@ function load(bundle, runtime, cache, url) {
 
   if (source === null) throw new Error(`Cannot find module '${url.href}'`)
 
-  function require(specifier) {
+  function require(specifier, opts = {}) {
+    const attributes = opts && opts.with
+
     return load(
       bundle,
       runtime,
+      builtinRequire,
       cache,
-      resolve(bundle, runtime, specifier, url)
+      resolve(bundle, runtime, specifier, url),
+      attributes
     ).exports
   }
 
@@ -54,7 +88,13 @@ function load(bundle, runtime, cache, url) {
   require.addon = function (specifier = '.', parentURL = url) {
     return builtinRequire(
       urlToPath(
-        addon(bundle, runtime, specifier, toURL(parentURL, url)),
+        addon(
+          bundle,
+          runtime,
+          builtinRequire,
+          specifier,
+          toURL(parentURL, url)
+        ),
         runtime
       )
     )
@@ -64,7 +104,7 @@ function load(bundle, runtime, cache, url) {
 
   require.addon.resolve = function (specifier = '.', parentURL = url) {
     return urlToPath(
-      addon(bundle, runtime, specifier, toURL(parentURL, url)),
+      addon(bundle, runtime, builtinRequire, specifier, toURL(parentURL, url)),
       runtime
     )
   }
@@ -76,21 +116,86 @@ function load(bundle, runtime, cache, url) {
     )
   }
 
-  if (path.extname(url.href) === '.json') module.exports = JSON.parse(source)
-  else {
-    const fn = new Function(
-      'require',
-      'module',
-      'exports',
-      '__filename',
-      '__dirname',
-      source
-    )
+  const extension =
+    canonicalExtensionForType(type) || path.extname(url.pathname)
 
-    fn(require, module, module.exports, module.filename, module.dirname)
+  switch (extension) {
+    case '.json':
+      module.type = constants.JSON
+      module.exports = JSON.parse(source)
+      break
+    case '.bin':
+      module.type = constants.BINARY
+      module.exports = source
+      break
+    case '.txt':
+      module.type = constants.TEXT
+      module.exports = source.toString()
+      break
+    case '.cjs':
+    default:
+      module.type = constants.SCRIPT
+
+      const fn = new Function(
+        'require',
+        'module',
+        'exports',
+        '__filename',
+        '__dirname',
+        source
+      )
+
+      fn(require, module, module.exports, module.filename, module.dirname)
   }
 
   return module
+}
+
+function typeForAttributes(attributes) {
+  if (typeof attributes !== 'object' || attributes === null) return 0
+
+  switch (attributes.type) {
+    case 'script':
+      return constants.types.SCRIPT
+    case 'json':
+      return constants.types.JSON
+    case 'binary':
+      return constants.types.BINARY
+    case 'text':
+      return constants.types.TEXT
+    default:
+      return 0
+  }
+}
+
+function canonicalExtensionForType(type) {
+  switch (type) {
+    case constants.types.SCRIPT:
+      return '.cjs'
+    case constants.types.JSON:
+      return '.json'
+    case constants.types.BINARY:
+      return '.bin'
+    case constants.types.TEXT:
+      return '.txt'
+    default:
+      return null
+  }
+}
+
+function nameOfType(type) {
+  switch (type) {
+    case constants.types.SCRIPT:
+      return 'script'
+    case constants.types.JSON:
+      return 'json'
+    case constants.types.BINARY:
+      return 'binary'
+    case constants.types.TEXT:
+      return 'text'
+    default:
+      return null
+  }
 }
 
 function resolve(bundle, runtime, specifier, parentURL) {
@@ -98,6 +203,7 @@ function resolve(bundle, runtime, specifier, parentURL) {
     specifier,
     parentURL,
     {
+      imports: bundle.imports,
       resolutions: bundle.resolutions,
       builtins: runtime.builtins,
       conditions: ['require', ...runtime.conditions],
@@ -115,12 +221,13 @@ function resolve(bundle, runtime, specifier, parentURL) {
   )
 }
 
-function addon(bundle, runtime, specifier, parentURL) {
+function addon(bundle, runtime, builtinRequire, specifier, parentURL) {
   for (const resolved of resolveAddon(
     specifier,
     parentURL,
     {
       host: runtime.host,
+      imports: bundle.imports,
       resolutions: bundle.resolutions,
       conditions: ['addon', ...runtime.conditions],
       extensions: runtime.extensions.addon,
@@ -149,6 +256,7 @@ function asset(bundle, runtime, specifier, parentURL) {
     specifier,
     parentURL,
     {
+      imports: bundle.imports,
       resolutions: bundle.resolutions,
       builtins: runtime.builtins,
       conditions: ['asset', ...runtime.conditions],

@@ -60,7 +60,6 @@ function load(
     type,
     filename,
     dirname,
-    imports,
     exports: {}
   }
 
@@ -92,7 +91,7 @@ function load(
       builtinRequire,
       cache,
       resolved,
-      null
+      { type: 'json' }
     )
 
     imports = mixinImports(imports, module.exports, resolved)

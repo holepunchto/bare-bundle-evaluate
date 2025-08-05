@@ -19,6 +19,8 @@ module.exports = function evaluate(bundle, runtime, builtinRequire) {
 
   return load(
     bundle,
+    bundle.imports,
+    bundle.resolutions,
     runtime,
     builtinRequire,
     Object.create(null),
@@ -26,7 +28,16 @@ module.exports = function evaluate(bundle, runtime, builtinRequire) {
   )
 }
 
-function load(bundle, runtime, builtinRequire, cache, url, attributes) {
+function load(
+  bundle,
+  imports,
+  resolutions,
+  runtime,
+  builtinRequire,
+  cache,
+  url,
+  attributes
+) {
   const type = typeForAttributes(attributes)
 
   let module = cache[url.href] || null
@@ -58,6 +69,34 @@ function load(bundle, runtime, builtinRequire, cache, url, attributes) {
     return module
   }
 
+  if (
+    typeof attributes === 'object' &&
+    attributes !== null &&
+    typeof attributes.imports === 'string'
+  ) {
+    const resolved = resolve(
+      bundle,
+      imports,
+      resolutions,
+      runtime,
+      attributes.imports,
+      url
+    )
+
+    const module = load(
+      bundle,
+      imports,
+      resolutions,
+      runtime,
+      builtinRequire,
+      cache,
+      resolved,
+      { type: 'json' }
+    )
+
+    imports = mixinImports(imports, module.exports, resolved)
+  }
+
   const source = bundle.read(url.href)
 
   if (source === null) throw new Error(`Cannot find module '${url.href}'`)
@@ -67,10 +106,12 @@ function load(bundle, runtime, builtinRequire, cache, url, attributes) {
 
     return load(
       bundle,
+      imports,
+      resolutions,
       runtime,
       builtinRequire,
       cache,
-      resolve(bundle, runtime, specifier, url),
+      resolve(bundle, imports, resolutions, runtime, specifier, url),
       attributes
     ).exports
   }
@@ -80,7 +121,14 @@ function load(bundle, runtime, builtinRequire, cache, url, attributes) {
 
   require.resolve = function (specifier, parentURL = url) {
     return urlToPath(
-      resolve(bundle, runtime, specifier, toURL(parentURL, url)),
+      resolve(
+        bundle,
+        imports,
+        resolutions,
+        runtime,
+        specifier,
+        toURL(parentURL, url)
+      ),
       runtime
     )
   }
@@ -90,6 +138,8 @@ function load(bundle, runtime, builtinRequire, cache, url, attributes) {
       urlToPath(
         addon(
           bundle,
+          imports,
+          resolutions,
           runtime,
           builtinRequire,
           specifier,
@@ -104,14 +154,29 @@ function load(bundle, runtime, builtinRequire, cache, url, attributes) {
 
   require.addon.resolve = function (specifier = '.', parentURL = url) {
     return urlToPath(
-      addon(bundle, runtime, builtinRequire, specifier, toURL(parentURL, url)),
+      addon(
+        bundle,
+        imports,
+        resolutions,
+        runtime,
+        builtinRequire,
+        specifier,
+        toURL(parentURL, url)
+      ),
       runtime
     )
   }
 
   require.asset = function (specifier, parentURL = url) {
     return urlToPath(
-      asset(bundle, runtime, specifier, toURL(parentURL, url)),
+      asset(
+        bundle,
+        imports,
+        resolutions,
+        runtime,
+        specifier,
+        toURL(parentURL, url)
+      ),
       runtime
     )
   }
@@ -198,13 +263,25 @@ function nameOfType(type) {
   }
 }
 
-function resolve(bundle, runtime, specifier, parentURL) {
+function mixinImports(target, imports, url) {
+  if (typeof imports === 'object' && imports !== null && 'imports' in imports) {
+    imports = imports.imports
+  }
+
+  if (typeof imports !== 'object' || imports === null) {
+    throw new Error(`Imports map at '${url.href}' is not valid`)
+  }
+
+  return { ...target, ...imports }
+}
+
+function resolve(bundle, imports, resolutions, runtime, specifier, parentURL) {
   for (const resolved of resolveModule(
     specifier,
     parentURL,
     {
-      imports: bundle.imports,
-      resolutions: bundle.resolutions,
+      imports,
+      resolutions,
       builtins: runtime.builtins,
       conditions: ['require', ...runtime.conditions],
       extensions: runtime.extensions.module,
@@ -221,14 +298,22 @@ function resolve(bundle, runtime, specifier, parentURL) {
   )
 }
 
-function addon(bundle, runtime, builtinRequire, specifier, parentURL) {
+function addon(
+  bundle,
+  imports,
+  resolutions,
+  runtime,
+  builtinRequire,
+  specifier,
+  parentURL
+) {
   for (const resolved of resolveAddon(
     specifier,
     parentURL,
     {
+      imports,
+      resolutions,
       host: runtime.host,
-      imports: bundle.imports,
-      resolutions: bundle.resolutions,
       conditions: ['addon', ...runtime.conditions],
       extensions: runtime.extensions.addon,
       engines: runtime.versions
@@ -251,13 +336,13 @@ function addon(bundle, runtime, builtinRequire, specifier, parentURL) {
   )
 }
 
-function asset(bundle, runtime, specifier, parentURL) {
+function asset(bundle, imports, resolutions, runtime, specifier, parentURL) {
   for (const resolved of resolveModule(
     specifier,
     parentURL,
     {
-      imports: bundle.imports,
-      resolutions: bundle.resolutions,
+      imports,
+      resolutions,
       builtins: runtime.builtins,
       conditions: ['asset', ...runtime.conditions],
       engines: runtime.versions

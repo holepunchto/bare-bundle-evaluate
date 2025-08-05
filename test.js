@@ -475,3 +475,19 @@ test("require('id', { with: { type: 'type' } }), asserted type mismatch", (t) =>
     t.comment(err.message)
   }
 })
+
+test("require('id', { with: { imports: 'specifier' } })", (t) => {
+  const bundle = new Bundle()
+    .write(
+      '/foo.js',
+      "module.exports = require('./bar.js', { with: { imports: './imports.json' } })",
+      {
+        main: true
+      }
+    )
+    .write('/bar.js', "module.exports = require('baz')")
+    .write('/baz.js', 'module.exports = 42')
+    .write('/imports.json', '{ "baz": "./baz.js" }')
+
+  t.is(evaluate(bundle.mount(pathToFileURL('./test.bundle/'))).exports, 42)
+})

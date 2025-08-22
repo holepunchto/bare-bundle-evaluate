@@ -36,7 +36,8 @@ function load(
   builtinRequire,
   cache,
   url,
-  attributes
+  referrer = null,
+  attributes = null
 ) {
   const type = typeForAttributes(attributes)
 
@@ -80,7 +81,7 @@ function load(
       resolutions,
       runtime,
       attributes.imports,
-      url
+      referrer
     )
 
     const module = load(
@@ -91,6 +92,7 @@ function load(
       builtinRequire,
       cache,
       resolved,
+      url,
       { type: 'json' }
     )
 
@@ -112,6 +114,7 @@ function load(
       builtinRequire,
       cache,
       resolve(bundle, imports, resolutions, runtime, specifier, url),
+      url,
       attributes
     ).exports
   }
@@ -289,8 +292,9 @@ function resolve(bundle, imports, resolutions, runtime, specifier, parentURL) {
     },
     readPackage.bind(null, bundle)
   )) {
-    if (resolved.protocol === 'builtin:' || bundle.exists(resolved.href))
+    if (resolved.protocol === 'builtin:' || bundle.exists(resolved.href)) {
       return resolved
+    }
   }
 
   throw new Error(

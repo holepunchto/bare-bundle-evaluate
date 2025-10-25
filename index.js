@@ -45,9 +45,7 @@ function load(
 
   if (module !== null) {
     if (type !== 0 && type !== module.type) {
-      throw new Error(
-        `Module '${module.url.href}' is not of type '${nameOfType(type)}'`
-      )
+      throw new Error(`Module '${module.url.href}' is not of type '${nameOfType(type)}'`)
     }
 
     return module
@@ -75,14 +73,7 @@ function load(
     attributes !== null &&
     typeof attributes.imports === 'string'
   ) {
-    const resolved = resolve(
-      bundle,
-      imports,
-      resolutions,
-      runtime,
-      attributes.imports,
-      referrer
-    )
+    const resolved = resolve(bundle, imports, resolutions, runtime, attributes.imports, referrer)
 
     const module = load(
       bundle,
@@ -124,14 +115,7 @@ function load(
 
   require.resolve = function (specifier, parentURL = url) {
     return urlToPath(
-      resolve(
-        bundle,
-        imports,
-        resolutions,
-        runtime,
-        specifier,
-        toURL(parentURL, url)
-      ),
+      resolve(bundle, imports, resolutions, runtime, specifier, toURL(parentURL, url)),
       runtime
     )
   }
@@ -172,20 +156,12 @@ function load(
 
   require.asset = function (specifier, parentURL = url) {
     return urlToPath(
-      asset(
-        bundle,
-        imports,
-        resolutions,
-        runtime,
-        specifier,
-        toURL(parentURL, url)
-      ),
+      asset(bundle, imports, resolutions, runtime, specifier, toURL(parentURL, url)),
       runtime
     )
   }
 
-  const extension =
-    canonicalExtensionForType(type) || path.extname(url.pathname)
+  const extension = canonicalExtensionForType(type) || path.extname(url.pathname)
 
   switch (extension) {
     case '.json':
@@ -204,14 +180,7 @@ function load(
     default:
       module.type = constants.SCRIPT
 
-      const fn = new Function(
-        'require',
-        'module',
-        'exports',
-        '__filename',
-        '__dirname',
-        source
-      )
+      const fn = new Function('require', 'module', 'exports', '__filename', '__dirname', source)
 
       fn(require, module, module.exports, module.filename, module.dirname)
   }
@@ -297,20 +266,10 @@ function resolve(bundle, imports, resolutions, runtime, specifier, parentURL) {
     }
   }
 
-  throw new Error(
-    `Cannot find module '${specifier}' imported from '${parentURL.href}'`
-  )
+  throw new Error(`Cannot find module '${specifier}' imported from '${parentURL.href}'`)
 }
 
-function addon(
-  bundle,
-  imports,
-  resolutions,
-  runtime,
-  builtinRequire,
-  specifier,
-  parentURL
-) {
+function addon(bundle, imports, resolutions, runtime, builtinRequire, specifier, parentURL) {
   for (const resolved of resolveAddon(
     specifier,
     parentURL,
@@ -335,9 +294,7 @@ function addon(
     }
   }
 
-  throw new Error(
-    `Cannot find addon '${specifier}' imported from '${parentURL.href}'`
-  )
+  throw new Error(`Cannot find addon '${specifier}' imported from '${parentURL.href}'`)
 }
 
 function asset(bundle, imports, resolutions, runtime, specifier, parentURL) {
@@ -356,9 +313,7 @@ function asset(bundle, imports, resolutions, runtime, specifier, parentURL) {
     if (resolved.protocol === 'file:') return resolved
   }
 
-  throw new Error(
-    `Cannot find asset '${specifier}' imported from '${parentURL.href}'`
-  )
+  throw new Error(`Cannot find asset '${specifier}' imported from '${parentURL.href}'`)
 }
 
 function readPackage(bundle, url) {
@@ -395,9 +350,7 @@ function urlToPath(url, runtime) {
 
   if (isWindows) {
     if (/%2f|%5c/i.test(url.pathname)) {
-      throw new Error(
-        'The URL path must not include encoded \\ or / characters'
-      )
+      throw new Error('The URL path must not include encoded \\ or / characters')
     }
   } else {
     if (/%2f/i.test(url.pathname)) {
@@ -416,9 +369,7 @@ function urlToDirname(url, runtime) {
 
   if (isWindows) {
     if (/%2f|%5c/i.test(url.pathname)) {
-      throw new Error(
-        'The URL path must not include encoded \\ or / characters'
-      )
+      throw new Error('The URL path must not include encoded \\ or / characters')
     }
   } else {
     if (/%2f/i.test(url.pathname)) {

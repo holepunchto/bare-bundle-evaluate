@@ -59,11 +59,7 @@ test('require.addon()', (t) => {
     })
     .write('/package.json', '{ "name": "addon", "addon": true }')
 
-  t.alike(
-    evaluate(bundle.mount(pathToFileURL('./test/fixtures/addon/test.bundle/')))
-      .exports,
-    42
-  )
+  t.alike(evaluate(bundle.mount(pathToFileURL('./test/fixtures/addon/test.bundle/'))).exports, 42)
 })
 
 test("require.addon('id')", (t) => {
@@ -73,33 +69,21 @@ test("require.addon('id')", (t) => {
     })
     .write('/package.json', '{ "name": "addon", "addon": true }')
 
-  t.is(
-    evaluate(bundle.mount(pathToFileURL('./test/fixtures/addon/test.bundle/')))
-      .exports,
-    42
-  )
+  t.is(evaluate(bundle.mount(pathToFileURL('./test/fixtures/addon/test.bundle/'))).exports, 42)
 })
 
 test("require.addon('id', referrer)", (t) => {
   const bundle = new Bundle()
-    .write(
-      '/a/binding.js',
-      "module.exports = require('../b')('.', __filename)",
-      {
-        main: true
-      }
-    )
+    .write('/a/binding.js', "module.exports = require('../b')('.', __filename)", {
+      main: true
+    })
     .write('/a/package.json', '{ "name": "addon", "addon": true }')
     .write(
       '/b/index.js',
       'module.exports = (specifier, referrer) => require.addon(specifier, referrer)'
     )
 
-  t.alike(
-    evaluate(bundle.mount(pathToFileURL('./test/fixtures/addon/test.bundle/')))
-      .exports,
-    42
-  )
+  t.alike(evaluate(bundle.mount(pathToFileURL('./test/fixtures/addon/test.bundle/'))).exports, 42)
 })
 
 test("require.addon('id'), preresolved", (t) => {
@@ -150,49 +134,45 @@ test("require.addon('id'), preresolved", (t) => {
 
 test("require.addon('id', referrer), preresolved", (t) => {
   const bundle = new Bundle()
-    .write(
-      '/a/binding.js',
-      "module.exports = require('../b')('.', __filename)",
-      {
-        main: true,
-        imports: {
-          '.': {
-            addon: {
-              darwin: {
-                arm64: {
-                  bare: '/../fixtures/addon/prebuilds/darwin-arm64/addon.bare',
-                  node: '/../fixtures/addon/prebuilds/darwin-arm64/addon.node'
-                },
-                x64: {
-                  bare: '/../fixtures/addon/prebuilds/darwin-x64/addon.bare',
-                  node: '/../fixtures/addon/prebuilds/darwin-x64/addon.node'
-                }
+    .write('/a/binding.js', "module.exports = require('../b')('.', __filename)", {
+      main: true,
+      imports: {
+        '.': {
+          addon: {
+            darwin: {
+              arm64: {
+                bare: '/../fixtures/addon/prebuilds/darwin-arm64/addon.bare',
+                node: '/../fixtures/addon/prebuilds/darwin-arm64/addon.node'
               },
-              linux: {
-                arm64: {
-                  bare: '/../fixtures/addon/prebuilds/linux-arm64/addon.bare',
-                  node: '/../fixtures/addon/prebuilds/linux-arm64/addon.node'
-                },
-                x64: {
-                  bare: '/../fixtures/addon/prebuilds/linux-x64/addon.bare',
-                  node: '/../fixtures/addon/prebuilds/linux-x64/addon.node'
-                }
+              x64: {
+                bare: '/../fixtures/addon/prebuilds/darwin-x64/addon.bare',
+                node: '/../fixtures/addon/prebuilds/darwin-x64/addon.node'
+              }
+            },
+            linux: {
+              arm64: {
+                bare: '/../fixtures/addon/prebuilds/linux-arm64/addon.bare',
+                node: '/../fixtures/addon/prebuilds/linux-arm64/addon.node'
               },
-              win32: {
-                arm64: {
-                  bare: '/../fixtures/addon/prebuilds/win32-arm64/addon.bare',
-                  node: '/../fixtures/addon/prebuilds/win32-arm64/addon.node'
-                },
-                x64: {
-                  bare: '/../fixtures/addon/prebuilds/win32-x64/addon.bare',
-                  node: '/../fixtures/addon/prebuilds/win32-x64/addon.node'
-                }
+              x64: {
+                bare: '/../fixtures/addon/prebuilds/linux-x64/addon.bare',
+                node: '/../fixtures/addon/prebuilds/linux-x64/addon.node'
+              }
+            },
+            win32: {
+              arm64: {
+                bare: '/../fixtures/addon/prebuilds/win32-arm64/addon.bare',
+                node: '/../fixtures/addon/prebuilds/win32-arm64/addon.node'
+              },
+              x64: {
+                bare: '/../fixtures/addon/prebuilds/win32-x64/addon.bare',
+                node: '/../fixtures/addon/prebuilds/win32-x64/addon.node'
               }
             }
           }
         }
       }
-    )
+    })
     .write('/a/package.json', '{ "name": "addon", "addon": true }')
     .write(
       '/b/index.js',
@@ -234,13 +214,9 @@ test("require.addon.resolve('id')", (t) => {
 
 test("require.addon.resolve('id', referrer)", (t) => {
   const bundle = new Bundle()
-    .write(
-      '/a/binding.js',
-      "module.exports = require('../b')('.', __filename)",
-      {
-        main: true
-      }
-    )
+    .write('/a/binding.js', "module.exports = require('../b')('.', __filename)", {
+      main: true
+    })
     .write('/a/package.json', '{ "name": "addon", "addon": true }')
     .write(
       '/b/index.js',
@@ -262,22 +238,16 @@ test('require.addon.host', (t) => {
     })
     .write('/package.json', '{ "name": "addon", "addon": true }')
 
-  const host = evaluate(
-    bundle.mount(pathToFileURL('./test/fixtures/addon/test.bundle/'))
-  ).exports
+  const host = evaluate(bundle.mount(pathToFileURL('./test/fixtures/addon/test.bundle/'))).exports
 
   t.comment(host)
   t.is(typeof host, 'string')
 })
 
 test("require.asset('id')", (t) => {
-  const bundle = new Bundle().write(
-    '/foo.js',
-    "module.exports = require.asset('./bar.txt')",
-    {
-      main: true
-    }
-  )
+  const bundle = new Bundle().write('/foo.js', "module.exports = require.asset('./bar.txt')", {
+    main: true
+  })
 
   t.is(
     evaluate(bundle.mount(pathToFileURL('./test.bundle/'))).exports,
@@ -287,13 +257,9 @@ test("require.asset('id')", (t) => {
 
 test("require.asset('id', referrer)", (t) => {
   const bundle = new Bundle()
-    .write(
-      '/a/foo.js',
-      "module.exports = require('../b')('./bar.txt', __filename)",
-      {
-        main: true
-      }
-    )
+    .write('/a/foo.js', "module.exports = require('../b')('./bar.txt', __filename)", {
+      main: true
+    })
     .write(
       '/b/index.js',
       'module.exports = (specifier, referrer) => require.asset(specifier, referrer)'
@@ -306,48 +272,34 @@ test("require.asset('id', referrer)", (t) => {
 })
 
 test("require.asset('id'), preresolved", (t) => {
-  const bundle = new Bundle().write(
-    '/foo.js',
-    "module.exports = require.asset('./bar.txt')",
-    {
+  const bundle = new Bundle().write('/foo.js', "module.exports = require.asset('./bar.txt')", {
+    main: true,
+    imports: {
+      './bar.txt': {
+        asset: '/../bar.txt'
+      }
+    }
+  })
+
+  t.is(evaluate(bundle.mount(pathToFileURL('./test.bundle/'))).exports, path.resolve('./bar.txt'))
+})
+
+test("require.asset('id', referrer), preresolved", (t) => {
+  const bundle = new Bundle()
+    .write('/a/foo.js', "module.exports = require('../b')('./bar.txt', __filename)", {
       main: true,
       imports: {
         './bar.txt': {
           asset: '/../bar.txt'
         }
       }
-    }
-  )
-
-  t.is(
-    evaluate(bundle.mount(pathToFileURL('./test.bundle/'))).exports,
-    path.resolve('./bar.txt')
-  )
-})
-
-test("require.asset('id', referrer), preresolved", (t) => {
-  const bundle = new Bundle()
-    .write(
-      '/a/foo.js',
-      "module.exports = require('../b')('./bar.txt', __filename)",
-      {
-        main: true,
-        imports: {
-          './bar.txt': {
-            asset: '/../bar.txt'
-          }
-        }
-      }
-    )
+    })
     .write(
       '/b/index.js',
       'module.exports = (specifier, referrer) => require.asset(specifier, referrer)'
     )
 
-  t.is(
-    evaluate(bundle.mount(pathToFileURL('./test.bundle/'))).exports,
-    path.resolve('./bar.txt')
-  )
+  t.is(evaluate(bundle.mount(pathToFileURL('./test.bundle/'))).exports, path.resolve('./bar.txt'))
 })
 
 test("require('builtin')", (t) => {
@@ -355,18 +307,11 @@ test("require('builtin')", (t) => {
 
   if (builtin === null) return t.pass('has no builtins')
 
-  const bundle = new Bundle().write(
-    '/foo.js',
-    `module.exports = require('${builtin}')`,
-    {
-      main: true
-    }
-  )
+  const bundle = new Bundle().write('/foo.js', `module.exports = require('${builtin}')`, {
+    main: true
+  })
 
-  t.is(
-    evaluate(bundle.mount(pathToFileURL('./test.bundle/'))).exports,
-    require(builtin)
-  )
+  t.is(evaluate(bundle.mount(pathToFileURL('./test.bundle/'))).exports, require(builtin))
 })
 
 test("require('.json')", (t) => {
@@ -401,21 +346,14 @@ test("require('.txt')", (t) => {
     })
     .write('/bar.txt', 'Hello world')
 
-  t.alike(
-    evaluate(bundle.mount(pathToFileURL('./test.bundle/'))).exports,
-    'Hello world'
-  )
+  t.alike(evaluate(bundle.mount(pathToFileURL('./test.bundle/'))).exports, 'Hello world')
 })
 
 test("require('id', { with: { type: 'json' } })", (t) => {
   const bundle = new Bundle()
-    .write(
-      '/foo.js',
-      "module.exports = require('./bar', { with: { type: 'json' } })",
-      {
-        main: true
-      }
-    )
+    .write('/foo.js', "module.exports = require('./bar', { with: { type: 'json' } })", {
+      main: true
+    })
     .write('/bar', '{ "hello": "world" }')
 
   t.alike(evaluate(bundle.mount(pathToFileURL('./test.bundle/'))).exports, {
@@ -425,13 +363,9 @@ test("require('id', { with: { type: 'json' } })", (t) => {
 
 test("require('id', { with: { type: 'binary' } })", (t) => {
   const bundle = new Bundle()
-    .write(
-      '/foo.js',
-      "module.exports = require('./bar', { with: { type: 'binary' } })",
-      {
-        main: true
-      }
-    )
+    .write('/foo.js', "module.exports = require('./bar', { with: { type: 'binary' } })", {
+      main: true
+    })
     .write('/bar', 'Hello world')
 
   t.alike(
@@ -442,19 +376,12 @@ test("require('id', { with: { type: 'binary' } })", (t) => {
 
 test("require('id', { with: { type: 'text' } })", (t) => {
   const bundle = new Bundle()
-    .write(
-      '/foo.js',
-      "module.exports = require('./bar', { with: { type: 'text' } })",
-      {
-        main: true
-      }
-    )
+    .write('/foo.js', "module.exports = require('./bar', { with: { type: 'text' } })", {
+      main: true
+    })
     .write('/bar', 'Hello world')
 
-  t.is(
-    evaluate(bundle.mount(pathToFileURL('./test.bundle/'))).exports,
-    'Hello world'
-  )
+  t.is(evaluate(bundle.mount(pathToFileURL('./test.bundle/'))).exports, 'Hello world')
 })
 
 test("require('id', { with: { type: 'type' } }), asserted type mismatch", (t) => {

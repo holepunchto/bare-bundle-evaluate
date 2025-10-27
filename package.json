@@ -16,6 +16,10 @@
     "lib"
   ],
   "imports": {
+    "fs": {
+      "bare": "bare-fs",
+      "default": "fs"
+    },
     "path": {
       "bare": "bare-path",
       "default": "path"
@@ -43,6 +47,7 @@
   "homepage": "https://github.com/holepunchto/bare-bundle-evaluate#readme",
   "dependencies": {
     "bare-addon-resolve": "^1.6.0",
+    "bare-fs": "^4.5.0",
     "bare-module-resolve": "^1.8.0",
     "bare-path": "^3.0.0",
     "bare-url": "^2.0.7"

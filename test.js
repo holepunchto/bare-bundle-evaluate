@@ -245,21 +245,29 @@ test('require.addon.host', (t) => {
 })
 
 test("require.asset('id')", (t) => {
-  const bundle = new Bundle().write('/foo.js', "module.exports = require.asset('./bar.txt')", {
-    main: true
-  })
+  const bundle = new Bundle().write(
+    '/foo.js',
+    "module.exports = require.asset('../test/fixtures/asset.txt')",
+    {
+      main: true
+    }
+  )
 
   t.is(
     evaluate(bundle.mount(pathToFileURL('./test.bundle/'))).exports,
-    path.resolve('./test.bundle/bar.txt')
+    path.resolve('./test/fixtures/asset.txt')
   )
 })
 
 test("require.asset('id', referrer)", (t) => {
   const bundle = new Bundle()
-    .write('/a/foo.js', "module.exports = require('../b')('./bar.txt', __filename)", {
-      main: true
-    })
+    .write(
+      '/a/foo.js',
+      "module.exports = require('../b')('../../test/fixtures/asset.txt', __filename)",
+      {
+        main: true
+      }
+    )
     .write(
       '/b/index.js',
       'module.exports = (specifier, referrer) => require.asset(specifier, referrer)'
@@ -267,30 +275,33 @@ test("require.asset('id', referrer)", (t) => {
 
   t.is(
     evaluate(bundle.mount(pathToFileURL('./test.bundle/'))).exports,
-    path.resolve('./test.bundle/a/bar.txt')
+    path.resolve('./test/fixtures/asset.txt')
   )
 })
 
 test("require.asset('id'), preresolved", (t) => {
-  const bundle = new Bundle().write('/foo.js', "module.exports = require.asset('./bar.txt')", {
+  const bundle = new Bundle().write('/foo.js', "module.exports = require.asset('./asset.txt')", {
     main: true,
     imports: {
-      './bar.txt': {
-        asset: '/../bar.txt'
+      './asset.txt': {
+        asset: '/../test/fixtures/asset.txt'
       }
     }
   })
 
-  t.is(evaluate(bundle.mount(pathToFileURL('./test.bundle/'))).exports, path.resolve('./bar.txt'))
+  t.is(
+    evaluate(bundle.mount(pathToFileURL('./test.bundle/'))).exports,
+    path.resolve('./test/fixtures/asset.txt')
+  )
 })
 
 test("require.asset('id', referrer), preresolved", (t) => {
   const bundle = new Bundle()
-    .write('/a/foo.js', "module.exports = require('../b')('./bar.txt', __filename)", {
+    .write('/a/foo.js', "module.exports = require('../b')('./asset.txt', __filename)", {
       main: true,
       imports: {
-        './bar.txt': {
-          asset: '/../bar.txt'
+        './asset.txt': {
+          asset: '/../test/fixtures/asset.txt'
         }
       }
     })
@@ -299,7 +310,10 @@ test("require.asset('id', referrer), preresolved", (t) => {
       'module.exports = (specifier, referrer) => require.asset(specifier, referrer)'
     )
 
-  t.is(evaluate(bundle.mount(pathToFileURL('./test.bundle/'))).exports, path.resolve('./bar.txt'))
+  t.is(
+    evaluate(bundle.mount(pathToFileURL('./test.bundle/'))).exports,
+    path.resolve('./test/fixtures/asset.txt')
+  )
 })
 
 test("require('builtin')", (t) => {
@@ -417,4 +431,59 @@ test("require('id', { with: { imports: 'specifier' } })", (t) => {
     .write('/imports.json', '{ "baz": "./baz.js" }')
 
   t.is(evaluate(bundle.mount(pathToFileURL('./test.bundle/'))).exports, 42)
+})
+
+test('require.main', (t) => {
+  const bundle = new Bundle()
+    .write('/foo.js', "exports.main = require.main, exports.bar = require('./bar')", {
+      main: true,
+      imports: {
+        './bar': '/bar.js'
+      }
+    })
+    .write('/bar.js', 'exports.main = require.main')
+
+  const module = evaluate(bundle.mount(pathToFileURL('./test.bundle/')))
+
+  t.is(module.exports.main, module)
+  t.is(module.exports.bar.main, module)
+})
+
+test('module not found', (t) => {
+  const bundle = new Bundle().write('/foo.js', "module.exports = require('./bar')", {
+    main: true
+  })
+
+  try {
+    evaluate(bundle.mount(pathToFileURL('./test.bundle/')))
+    t.fail()
+  } catch (err) {
+    t.comment(err.message)
+  }
+})
+
+test('addon not found', (t) => {
+  const bundle = new Bundle().write('/binding.js', 'module.exports = require.addon()', {
+    main: true
+  })
+
+  try {
+    evaluate(bundle.mount(pathToFileURL('./test.bundle/')))
+    t.fail()
+  } catch (err) {
+    t.comment(err.message)
+  }
+})
+
+test('asset not found', (t) => {
+  const bundle = new Bundle().write('/foo.js', "module.exports = require.asset('./bar.txt')", {
+    main: true
+  })
+
+  try {
+    evaluate(bundle.mount(pathToFileURL('./test.bundle/')))
+    t.fail()
+  } catch (err) {
+    t.comment(err.message)
+  }
 })

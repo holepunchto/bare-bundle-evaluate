@@ -163,7 +163,7 @@ module.exports = function evaluate(bundle, runtime, builtinRequire) {
       },
       readPackage
     )) {
-      if (resolved.protocol === 'file:' && fs.existsSync(resolved)) {
+      if (resolved.protocol === 'file:' && fs.existsSync(fileURLToPath(resolved))) {
         return resolved
       }
     }
@@ -184,7 +184,7 @@ module.exports = function evaluate(bundle, runtime, builtinRequire) {
       },
       readPackage
     )) {
-      if (resolved.protocol === 'file:' && fs.existsSync(resolved)) {
+      if (resolved.protocol === 'file:' && fs.existsSync(fileURLToPath(resolved))) {
         return resolved
       }
     }

@@ -52,13 +52,13 @@
     "bare-path": "^3.0.0",
     "bare-url": "^2.0.7"
   },
-  "peerDependencies": {
-    "bare-bundle": "^1.8.0"
-  },
   "devDependencies": {
-    "bare-bundle": "*",
+    "bare-bundle": "^1.10.0",
     "brittle": "^3.2.1",
     "prettier": "^3.4.1",
     "prettier-config-holepunch": "^2.0.0"
+  },
+  "peerDependencies": {
+    "bare-bundle": "^1.8.0"
   }
 }

@@ -6,6 +6,8 @@ const resolveAddon = require('bare-addon-resolve')
 const defaultRuntime = require('bare-bundle-evaluate/runtime')
 const constants = require('./lib/constants')
 
+if (typeof require.addon !== 'function') require.addon = require
+
 module.exports = function evaluate(bundle, runtime, builtinRequire) {
   if (typeof runtime === 'function') {
     builtinRequire = runtime
@@ -87,7 +89,9 @@ module.exports = function evaluate(bundle, runtime, builtinRequire) {
     }
 
     require.addon = function (specifier = '.', parentURL = url) {
-      return builtinRequire(urlToPath(addon(specifier, module, toURL(parentURL, url)), runtime))
+      return builtinRequire.addon(
+        urlToPath(addon(specifier, module, toURL(parentURL, url)), runtime)
+      )
     }
 
     require.addon.host = runtime.host

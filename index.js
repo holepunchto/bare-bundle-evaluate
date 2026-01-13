@@ -286,7 +286,7 @@ function urlToPath(url, runtime) {
   if (url.protocol === 'file:') return fileURLToPath(url)
   if (url.protocol === 'builtin:') return url.pathname
 
-  const isWindows = runtime.platform === 'win32'
+  const isWindows = runtime.host.startsWith('win32')
 
   if (isWindows) {
     if (/%2f|%5c/i.test(url.pathname)) {
@@ -305,7 +305,7 @@ function urlToDirname(url, runtime) {
   if (url.protocol === 'file:') return path.dirname(fileURLToPath(url))
   if (url.protocol === 'builtin:') return '.'
 
-  const isWindows = runtime.platform === 'win32'
+  const isWindows = runtime.host.startsWith('win32')
 
   if (isWindows) {
     if (/%2f|%5c/i.test(url.pathname)) {

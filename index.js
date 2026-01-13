@@ -3,7 +3,7 @@ const fs = require('fs')
 const { pathToFileURL, fileURLToPath } = require('url')
 const resolveModule = require('bare-module-resolve')
 const resolveAddon = require('bare-addon-resolve')
-const defaultRuntime = require('bare-bundle-evaluate/runtime')
+const defaultRuntime = require('#runtime')
 const constants = require('./lib/constants')
 
 if (typeof require.addon !== 'function') require.addon = require

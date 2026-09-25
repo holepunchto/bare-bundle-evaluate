@@ -120,12 +120,13 @@ module.exports = function evaluate(bundle, runtime, builtinRequire) {
         module.exports = source.toString()
         break
       case '.cjs':
-      default:
+      default: {
         module.type = constants.SCRIPT
 
         const fn = new Function('require', 'module', 'exports', '__filename', '__dirname', source)
 
         fn(require, module, module.exports, module.filename, module.dirname)
+      }
     }
 
     return module

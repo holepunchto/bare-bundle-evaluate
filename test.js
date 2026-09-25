@@ -355,6 +355,44 @@ test("require.asset('id', referrer), preresolved", (t) => {
   )
 })
 
+test("require('id') and require.asset('id'), same resolution", (t) => {
+  const bundle = new Bundle()
+    .write('/foo.js', "module.exports = [require('./asset.txt'), require.asset('./asset.txt')]", {
+      main: true,
+      imports: {
+        './asset.txt': {
+          require: '/../test/fixtures/asset.txt',
+          asset: '/../test/fixtures/asset.txt'
+        }
+      }
+    })
+    .write('/../test/fixtures/asset.txt', 'hello world')
+
+  t.alike(evaluate(bundle.mount(pathToFileURL('./test.bundle/'))).exports, [
+    'hello world',
+    path.resolve('./test/fixtures/asset.txt')
+  ])
+})
+
+test("require('id') and require.asset('id'), asset ahead of the default", (t) => {
+  const bundle = new Bundle()
+    .write('/foo.js', "module.exports = [require('./bar'), require.asset('./bar')]", {
+      main: true,
+      imports: {
+        './bar': {
+          asset: '/../test/fixtures/asset.txt',
+          default: '/bar.js'
+        }
+      }
+    })
+    .write('/bar.js', 'module.exports = 42')
+
+  t.alike(evaluate(bundle.mount(pathToFileURL('./test.bundle/'))).exports, [
+    42,
+    path.resolve('./test/fixtures/asset.txt')
+  ])
+})
+
 test("require('builtin')", (t) => {
   const [builtin = null] = runtime.builtins
 

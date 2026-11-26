@@ -494,6 +494,44 @@ test("require('id', { with: { type: 'type' } }), asserted type mismatch", (t) =>
   }
 })
 
+test("require('id'), declared type", (t) => {
+  const bundle = new Bundle()
+    .write('/foo.js', "module.exports = require('./bar.js')", {
+      main: true
+    })
+    .write('/bar.js', '{ "hello": "world" }', { type: 'json' })
+
+  t.alike(evaluate(bundle.mount(pathToFileURL('./test.bundle/'))).exports, {
+    hello: 'world'
+  })
+})
+
+test("require('id'), declared type asserted after first load", (t) => {
+  const bundle = new Bundle()
+    .write(
+      '/foo.js',
+      "require('./bar.js'); module.exports = require('./bar.js', { with: { type: 'json' } })",
+      {
+        main: true
+      }
+    )
+    .write('/bar.js', '{ "hello": "world" }', { type: 'json' })
+
+  t.alike(evaluate(bundle.mount(pathToFileURL('./test.bundle/'))).exports, {
+    hello: 'world'
+  })
+})
+
+test("require('id', { with: { type: 'text' } }), declared type overridden", (t) => {
+  const bundle = new Bundle()
+    .write('/foo.js', "module.exports = require('./bar.js', { with: { type: 'text' } })", {
+      main: true
+    })
+    .write('/bar.js', '{ "hello": "world" }', { type: 'json' })
+
+  t.is(evaluate(bundle.mount(pathToFileURL('./test.bundle/'))).exports, '{ "hello": "world" }')
+})
+
 test("require('id', { with: { imports: 'specifier' } })", (t) => {
   const bundle = new Bundle()
     .write(

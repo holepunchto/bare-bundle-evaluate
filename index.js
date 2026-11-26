@@ -104,24 +104,26 @@ module.exports = function evaluate(bundle, runtime, builtinRequire) {
       return urlToPath(asset(specifier, module, toURL(parentURL, url)), runtime)
     }
 
-    const extension = canonicalExtensionForType(type) || path.extname(url.pathname)
+    const extension =
+      canonicalExtensionForType(type || typeForName(bundle.type(url.href))) ||
+      path.extname(url.pathname)
 
     switch (extension) {
       case '.json':
-        module.type = constants.JSON
+        module.type = constants.types.JSON
         module.exports = JSON.parse(source)
         break
       case '.bin':
-        module.type = constants.BINARY
+        module.type = constants.types.BINARY
         module.exports = source
         break
       case '.txt':
-        module.type = constants.TEXT
+        module.type = constants.types.TEXT
         module.exports = source.toString()
         break
       case '.cjs':
       default: {
-        module.type = constants.SCRIPT
+        module.type = constants.types.SCRIPT
 
         const fn = new Function('require', 'module', 'exports', '__filename', '__dirname', source)
 
@@ -243,7 +245,11 @@ function nameOfType(type) {
 function typeForAttributes(attributes) {
   if (typeof attributes !== 'object' || attributes === null) return 0
 
-  switch (attributes.type) {
+  return typeForName(attributes.type)
+}
+
+function typeForName(name) {
+  switch (name) {
     case 'script':
       return constants.types.SCRIPT
     case 'json':
